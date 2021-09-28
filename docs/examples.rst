@@ -1,11 +1,29 @@
 pytest examples
 ~~~~~~~~~~~~~~~
 
+A simple test
++++++++++++++
+
+.. code-block:: python
+
+    import pytest
+
+    from carvajal import aws
+
+    def test_none_accept_ssh_from_world():
+        my_instances = aws.get_instances()
+        ssh_ingress_rules = aws.instances_ingress_rules_for_port(my_instances, 22)
+        actual = aws.rules_cidrs_and_security_groups(ssh_ingress_rules)
+        assert "0.0.0.0/0" not in actual["cidrs"]
+
+Going a little further
+++++++++++++++++++++++
+
 Perhaps you would like to test some things about 
 your internally reachable web instances:
 
 * That they are only reachable from your offices.
-* That they can only be ssh'ed to from your developer offices.
+* That they can only be SSH'ed to from your developer offices.
 * That they have public IPs
 * That their public IPs are elastic IPs
 * That they don't accept any traffic other than SSH and HTTPS
@@ -74,7 +92,7 @@ and write tests for your web instances in ``tests/test_web.py``:
 
     @pytest.fixture(scope="module", name="web")
     def web_instances(my_instances):
-        # prod-web-03 stage-web-01 test-web-01
+        # for example: prod-web-03 stage-web-01 test-web-01
         return aws.match_env_type_num_name_scheme(my_instances, r"web")
 
     def test_accepts_web_from_offices_only(web, my_offices):
@@ -114,6 +132,14 @@ and write tests for your web instances in ``tests/test_web.py``:
         disabled = aws.instances_attribute(web, 'disableApiTermination')
         assert disabled
         assert all(disabled)
+
+
+Note the use of fixtures here. 
+Hitting the AWS API,
+or asking terraform questions, 
+takes some time.
+We can make sure that we don't issue the same expensive requests over and over
+by collecting this information once in a fixture.
 
 
 pyunit examples

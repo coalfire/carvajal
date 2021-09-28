@@ -18,23 +18,15 @@ please, or be prepared to rewrite some of your tests on occasion.
 Complete documentation is at
 https://carvajal.readthedocs.io/en/latest/index.html.
 
+Source code is at
+https://github.com/coalfire/carvajal.
+
 usage
 ~~~~~
 
 ``pip install carvajal``
 
 Create a ``test`` directory.
-
-In ``test/conftest.py``, place, for instance:
-
-.. code-block:: python
-
-    import pytest
-    from carvajal import aws
-
-    @pytest.fixture(scope="session")
-    def my_instances():
-        return aws.get_instances()
 
 Write some tests for all of your instances in ``test/test_all.py``:
 
@@ -44,7 +36,8 @@ Write some tests for all of your instances in ``test/test_all.py``:
 
     from carvajal import aws
 
-    def test_none_accept_ssh_from_world(my_instances):
+    def test_none_accept_ssh_from_world():
+        my_instances = aws.get_instances()
         ssh_ingress_rules = aws.instances_ingress_rules_for_port(my_instances, 22)
         actual = aws.rules_cidrs_and_security_groups(ssh_ingress_rules)
         assert "0.0.0.0/0" not in actual["cidrs"]
@@ -83,13 +76,15 @@ philosophy and alternatives
 
 Some other tools you might consider are:
 
-* https://terratest.gruntwork.io/
+* `Terratest <https://terratest.gruntwork.io/>`_
 
-* https://github.com/newcontext-oss/kitchen-terraform
+* `Kitchen-Terraform <https://github.com/newcontext-oss/kitchen-terraform>`_
 
-* https://community.chef.io/tools/chef-inspec
+* `InSpec <https://community.chef.io/tools/chef-inspec>`_
 
-* https://serverspec.org/
+* `Serverspec <https://serverspec.org/>`_
+
+* `ScoutSuite <https://github.com/nccgroup/ScoutSuite>`_
 
 development
 ------------
