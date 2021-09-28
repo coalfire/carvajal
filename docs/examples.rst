@@ -1,5 +1,5 @@
-pytest
-~~~~~~
+pytest examples
+~~~~~~~~~~~~~~~
 
 Perhaps you would like to test some things about 
 your internally reachable web instances:
@@ -115,10 +115,12 @@ and write tests for your web instances in ``tests/test_web.py``:
         assert disabled
         assert all(disabled)
 
-pyunit
-~~~~~~
+
+pyunit examples
+~~~~~~~~~~~~~~~
 
 .. code-block:: python
+
     import unittest
 
     from carvajal import aws
@@ -148,6 +150,7 @@ consider running `pyunit` tests with `pytest`.
 This lets you make use of fixtures, which will run once per class.
 
 .. code-block:: python
+
     import unittest
 
     import pytest

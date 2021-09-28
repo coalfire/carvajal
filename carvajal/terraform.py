@@ -1,5 +1,5 @@
 """
-Functions for extracting information terraform
+Functions for extracting information from terraform.
 """
 
 from functools import lru_cache
