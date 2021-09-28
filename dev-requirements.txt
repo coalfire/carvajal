@@ -16,7 +16,7 @@ importlib-metadata==4.8.1
 isort==5.9.3
 jeepney==0.7.1
 jmespath==0.9.5
-keyring==23.2.1
+keyring
 lazy-object-proxy==1.6.0
 mccabe==0.6.1
 more-itertools==8.2.0
@@ -42,7 +42,7 @@ six==1.14.0
 sortedcontainers==2.1.0
 toml==0.10.2
 tqdm==4.62.2
-twine==3.4.2
+twine
 typing-extensions==3.10.0.2
 urllib3==1.25.8
 wcwidth==0.1.8
