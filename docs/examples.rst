@@ -144,9 +144,9 @@ There is a potential problem here, though:
 Collecting all of your instances (or any other large collection) can take a
 long time. 
 If you have a lot of tests, you don't want to do it for every test.
-If you want to keep `xunit` style tests that `pyunit` gives you,
+If you want to keep ``xunit`` style tests that ``pyunit`` gives you,
 but avoid some of this overhead, 
-consider running `pyunit` tests with `pytest`.
+consider running ``pyunit`` tests with ``pytest``.
 This lets you make use of fixtures, which will run once per class.
 
 .. code-block:: python
