@@ -5,7 +5,7 @@ with open("README.rst", "r", encoding="utf-8") as fh:
 
 setuptools.setup(
     name="carvajal",
-    version="0.0.10",
+    version="0.1.0",
     author="Noah Birnel",
     author_email="noah.birnel@coalfire.com",
     description="Helper functions for describing AWS infrastructure",

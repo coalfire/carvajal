@@ -20,6 +20,14 @@ carvajal.terraform module
    :undoc-members:
    :show-inheritance:
 
+carvajal.utils module
+-------------------------
+
+.. automodule:: carvajal.utils
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 Module contents
 ---------------
 

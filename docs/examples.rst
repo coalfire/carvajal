@@ -16,11 +16,62 @@ A simple test
         actual = aws.rules_cidrs_and_security_groups(ssh_ingress_rules)
         assert "0.0.0.0/0" not in actual["cidrs"]
 
+
+Using all_and_not_empty
++++++++++++++++++++++++
+
+Let's test that some instances have API termination disabled.
+This is a nice one to have:
+sometimes when developing a complex configuration,
+we may destroy and rebuild an instance multiple times.
+To make that easy, we will enable API termination -
+but once our configuration is proven good,
+we want to turn it off.
+A test will help us remember to do this.
+
+.. code-block:: python
+
+    import pytest
+
+    from carvajal import aws
+
+
+    def test_has_api_termination_disabled(web):
+        my_instances = aws.get_instances()
+        web_instances = aws.match_env_type_num_name_scheme(my_instances, r"web")
+        disabled = aws.instances_attribute(web, 'disableApiTermination')
+        # THIS IS INCORRECT
+        assert all(disabled)
+
+
+There is a problem here.
+If there are no web instances
+(for instance, I have put in bad credentials,
+or the names are actually "PROD-WEB-01")
+then this test will pass.
+That is not desirable!
+
+Here is a better way:
+
+.. code-block:: python
+
+    import pytest
+
+    from carvajal import aws
+    from carvajal import utils
+
+    def test_has_api_termination_disabled(web):
+        my_instances = aws.get_instances()
+        web_instances = aws.match_env_type_num_name_scheme(my_instances, r"web")
+        disabled = aws.instances_attribute(web, 'disableApiTermination')
+        assert utils.all_and_not_empty(disabled)
+
+
 Going a little further
 ++++++++++++++++++++++
 
-Perhaps you would like to test some things about 
-your internally reachable web instances:
+Perhaps we would like to test some things about
+our internally reachable web instances:
 
 * That they are only reachable from your offices.
 * That they can only be SSH'ed to from your developer offices.
@@ -31,7 +82,7 @@ your internally reachable web instances:
 * That they are the correct instance type
 * That they have termination protection
 
-If you have terraform like this:
+Assume we have a ``variables.tf`` file like this:
 
 .. code-block:: terraform
 
@@ -50,7 +101,18 @@ If you have terraform like this:
     }
 
 
-then you can place this is your ``test/conftest.py``:
+
+We would like to use our terraform states as a single point of truth,
+rather than hardcoding these CIDR blocks into our test.
+We'll use ``carvajal``'s ``terraform`` submodule to pull in these variables.
+
+One thing you might notice in the earlier examples is that
+we defined our instances in each test.
+This is going to mean a lot of lengthy API calls as our test suite grows.
+More importantly, it is going to get boring.
+``pytest.fixture`` will let us pull in this information just once.
+
+These two techniques are demonstrated in this ``test/conftest.py``:
 
 .. code-block:: python
 
@@ -81,7 +143,7 @@ then you can place this is your ``test/conftest.py``:
         }
 
 
-and write tests for your web instances in ``tests/test_web.py``:
+Finally we write tests for our web instances in ``tests/test_web.py``:
 
 .. code-block:: python
 
@@ -107,13 +169,11 @@ and write tests for your web instances in ``tests/test_web.py``:
 
     def test_has_public_ip(web):
         public_ips = [instance.get('PublicIpAddress') for instance in web]
-        assert public_ips
-        assert all(public_ips)
+        assert all_and_not_empty(public_ips)
 
     def test_has_elastic_ip(web):
         eips = aws.instances_elastic_ips(web)
-        assert eips
-        assert all(eips)
+        assert all_and_not_empty(eips)
 
     def test_accepts_only_ssh_and_web(web):
         actual = tests.instances_ingress_ports(web)
@@ -125,25 +185,20 @@ and write tests for your web instances in ``tests/test_web.py``:
 
     def test_is_type_t3_medium(web):
         instance_types = [instance.get('InstanceType') for instance in web]
-        assert instance_types
-        assert all(i_type == "t3.medium" for i_type in instance_types)
+        assert all_and_not_empty(i_type == "t3.medium" for i_type in instance_types)
 
     def test_has_api_termination_disabled(web):
         disabled = aws.instances_attribute(web, 'disableApiTermination')
-        assert disabled
-        assert all(disabled)
-
-
-Note the use of fixtures here. 
-Hitting the AWS API,
-or asking terraform questions, 
-takes some time.
-We can make sure that we don't issue the same expensive requests over and over
-by collecting this information once in a fixture.
+        assert all_and_not_empty(disabled)
 
 
 pyunit examples
 ~~~~~~~~~~~~~~~
+
+``pyunit`` (the module itself if called ``unittest``)
+does not have test fixtures,
+and thus every test will need to make API calls.
+Here is an example:
 
 .. code-block:: python
 
@@ -157,7 +212,7 @@ pyunit examples
             all_instances = aws.get_instances()
             vpn_instances = aws.match_env_type_num_name_scheme(all_instances, r"vpn")
             public_ips = [
-                instance.get('PublicIpAddress') 
+                instance.get('PublicIpAddress')
                 for instance in vpn_instances
             ]
             self.assertTrue(public_ips)
@@ -166,14 +221,10 @@ pyunit examples
     if __name__ == '__main__':
         unittest.main()
 
-There is a potential problem here, though:
-Collecting all of your instances (or any other large collection) can take a
-long time. 
-If you have a lot of tests, you don't want to do it for every test.
-If you want to keep ``xunit`` style tests that ``pyunit`` gives you,
-but avoid some of this overhead, 
-consider running ``pyunit`` tests with ``pytest``.
-This lets you make use of fixtures, which will run once per class.
+However, we can run ``pyunit`` tests with the ``pytest`` runner,
+and that will let us use fixtures.
+This is be nice for those who prefer the ``xunit`` style of tests,
+but need the speed boost from fixtures.
 
 .. code-block:: python
 
@@ -194,7 +245,7 @@ This lets you make use of fixtures, which will run once per class.
 
         def test_has_public_ip(self):
             public_ips = [
-                instance.get('PublicIpAddress') 
+                instance.get('PublicIpAddress')
                 for instance in self.vpn
             ]
             self.assertTrue(public_ips)
