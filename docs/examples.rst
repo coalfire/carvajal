@@ -176,12 +176,10 @@ Finally we write tests for our web instances in ``tests/test_web.py``:
         assert all_and_not_empty(eips)
 
     def test_accepts_only_ssh_and_web(web):
-        actual = tests.instances_ingress_ports(web)
-        assert actual == {22, 443}
+        assert aws.instances_ingress_ports(web) == {22, 443}
 
     def test_sends_only_web(web):
-        actual = tests.instances_egress_ports(web)
-        assert actual == {443}
+        assert aws.instances_egress_ports(web) == {443}
 
     def test_is_type_t3_medium(web):
         instance_types = [instance.get('InstanceType') for instance in web]
