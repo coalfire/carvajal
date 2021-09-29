@@ -30,6 +30,8 @@ def _capitalize(string):
     >>> _capitalize("disableApiTermination")
     "DisableApiTermination"
     """
+    if string == '':
+        return string
     capital = string[0].upper()
     return capital + string[1:]
 
