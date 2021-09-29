@@ -2,7 +2,10 @@
 Miscellaneous utilities.
 """
 
-def all_and_not_empty(iterable):
+from typing import Iterable
+
+
+def all_and_not_empty(iterable: Iterable) -> bool:
     """
     Return True if iterable is all True and not empty.
     This is much like the standard library all,

@@ -4,6 +4,7 @@ Functions for extracting information from AWS objects.
 
 import re
 from itertools import chain
+from typing import Iterable, List
 
 import boto3
 from botocore.exceptions import ClientError as BotoClientError
@@ -18,7 +19,8 @@ try:
 except BotoNoRegionError:
     pass
 
-def _capitalize(string):
+
+def _capitalize(string: str) -> str:
     """
     Return a capitalized string.
 
@@ -30,12 +32,15 @@ def _capitalize(string):
     >>> _capitalize("disableApiTermination")
     "DisableApiTermination"
     """
-    if string == '':
+    if string == "":
         return string
     capital = string[0].upper()
     return capital + string[1:]
 
-def match_env_type_num_name_scheme(objects, infix, env=r"^[^-]+-", num=r"-[0-9][0-9]$"):
+
+def match_env_type_num_name_scheme(
+    objects, infix, env=r"^[^-]+-", num=r"-[0-9][0-9]$"
+):
     """
     Return objects with a Name tag matching the regex
     (env)(infix)(num)
@@ -61,7 +66,9 @@ def match_env_type_num_name_scheme(objects, infix, env=r"^[^-]+-", num=r"-[0-9][
     return objects_tags_key_values_matches_regex(objects, "Name", regex)
 
 
-def objects_tags_key_values_matches_regex(objects, key, regex):
+def objects_tags_key_values_matches_regex(
+    objects: Iterable[dict], key: str, regex: re.Pattern
+) -> List[dict]:
     """
     Return objects tagged with key matching regex.
     You may wish to use match_env_type_num_name_scheme instead when possible.
@@ -71,7 +78,7 @@ def objects_tags_key_values_matches_regex(objects, key, regex):
     :param key: Tag to compare against
     :type key: str
     :param regex: Regex to match
-    :type regex: re
+    :type regex: re.Pattern
     :return: List of returned boto3 objects
     :rtype: list
     """
@@ -82,7 +89,9 @@ def objects_tags_key_values_matches_regex(objects, key, regex):
     ]
 
 
-def tags_key_value_matches_regex(aws_object, key, regex):
+def tags_key_value_matches_regex(
+    aws_object: dict, key: str, regex: re.Pattern
+) -> bool:
     """
     Return true if aws_object's key key matches regex,
     otherwise False.
@@ -91,15 +100,13 @@ def tags_key_value_matches_regex(aws_object, key, regex):
     :param key: Tag to compare against
     :type key: str
     :param regex: Regex to match
-    :type regex: re
+    :type regex: re.Pattern
     :return: True or False, if there was a match
     :rtype: bool
     """
     tags = aws_object["Tags"]
     return any(
-        tag
-        for tag in tags
-        if tag["Key"] == key and regex.match(tag["Value"])
+        tag for tag in tags if tag["Key"] == key and regex.match(tag["Value"])
     )
 
 
@@ -119,7 +126,9 @@ def get_security_groups(filters=None):
     :rtype: set
     """
     filters = filters or []
-    return ec2_client.describe_security_groups(Filters=filters)["SecurityGroups"]
+    return ec2_client.describe_security_groups(Filters=filters)[
+        "SecurityGroups"
+    ]
 
 
 def get_load_balancers():
@@ -142,7 +151,9 @@ def get_instances(filters=None):
     :rtype: list
     """
     filters = filters or []
-    reservations = ec2_client.describe_instances(Filters=filters)["Reservations"]
+    reservations = ec2_client.describe_instances(Filters=filters)[
+        "Reservations"
+    ]
     return list(chain.from_iterable(r["Instances"] for r in reservations))
 
 
@@ -158,6 +169,7 @@ def get_addresses(filters=None):
     filters = filters or []
     return ec2_client.describe_addresses(Filters=filters)["Addresses"]
 
+
 def get_s3_buckets_names():
     """
     Return all S3 bucket names.
@@ -166,9 +178,10 @@ def get_s3_buckets_names():
     :rtype: list
     """
     return [
-        bucket['Name']
-        for bucket in s3_client.list_buckets()['Buckets']
+        bucket["Name"]
+        for bucket in s3_client.list_buckets()["Buckets"]
     ]
+
 
 def instances_security_groups_ids(instances):
     """
@@ -214,7 +227,11 @@ def security_groups_ingress(group_ids):
     :rtype: list
     """
     groups = [ec2.SecurityGroup(gid) for gid in group_ids]
-    return [rule for group in groups for rule in group.ip_permissions]
+    return [
+        rule
+        for group in groups
+        for rule in group.ip_permissions
+    ]
 
 
 def security_groups_egress(group_ids):
@@ -416,9 +433,8 @@ def instances_attribute(instances, attribute):
 
     return [
         ec2_client.describe_instance_attribute(
-            Attribute=attribute,
-            InstanceId=instance['InstanceId']
-        )[capitalized_attribute]['Value']
+            Attribute=attribute, InstanceId=instance["InstanceId"]
+        )[capitalized_attribute]["Value"]
         for instance in instances
     ]
 
@@ -433,13 +449,15 @@ def instances_elastic_ips(instances):
     :rtype: list
     """
 
-    ids = [instance['InstanceId'] for instance in instances]
+    ids = [instance["InstanceId"] for instance in instances]
     return ec2_client.describe_addresses(
-        Filters=[{
-            'Name': 'instance-id',
-            'Values': ids,
-        }]
-    )['Addresses']
+        Filters=[
+            {
+                "Name": "instance-id",
+                "Values": ids,
+            }
+        ]
+    )["Addresses"]
 
 
 def buckets_encrypted(buckets):

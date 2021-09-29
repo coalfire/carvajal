@@ -6,6 +6,7 @@ from functools import lru_cache
 import subprocess
 import yaml
 
+
 @lru_cache(maxsize=128)
 def console(query):
     """
@@ -21,9 +22,14 @@ def console(query):
     """
     tf_console = ["terraform", "console"]
     run = subprocess.run(
-        tf_console, input=query, stdout=subprocess.PIPE, encoding="utf-8", check=True
+        tf_console,
+        input=query,
+        stdout=subprocess.PIPE,
+        encoding="utf-8",
+        check=True,
     )
     return run.stdout.strip().strip('"')
+
 
 def output(query):
     """
@@ -40,6 +46,7 @@ def output(query):
     )
     return run.stdout.strip().strip('"')
 
+
 def value(what_type, name):
     """
     Ask terraform console for a data or a variable value.
@@ -52,10 +59,11 @@ def value(what_type, name):
     :return: Terraform's output
     :rtype: str
     """
-    if what_type not in ['data', 'var']:
+    if what_type not in ["data", "var"]:
         raise ValueError
     query = f"{what_type}.{name}"
     return console(query)
+
 
 def data(query):
     """
@@ -66,7 +74,7 @@ def data(query):
     :return: Terraform's output
     :rtype: str
     """
-    return value('data', query)
+    return value("data", query)
 
 
 def variable(var):
@@ -78,7 +86,7 @@ def variable(var):
     :return: Terraform's output
     :rtype: str
     """
-    return value('var', var)
+    return value("var", var)
 
 
 def struct(query):
