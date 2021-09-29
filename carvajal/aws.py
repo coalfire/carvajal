@@ -27,7 +27,7 @@ def _capitalize(string):
     :return: Capitalized input string
     :rtype: str
 
-    >>> uppercase_initial("disableApiTermination")
+    >>> _capitalize("disableApiTermination")
     "DisableApiTermination"
     """
     capital = string[0].upper()
