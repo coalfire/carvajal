@@ -182,8 +182,8 @@ Finally we write tests for our web instances in ``tests/test_web.py``:
         assert aws.instances_egress_ports(web) == {443}
 
     def test_is_type_t3_medium(web):
-        instance_types = [instance.get('InstanceType') for instance in web]
-        assert all_and_not_empty(i_type == "t3.medium" for i_type in instance_types)
+        t3_medium = [instance.get('InstanceType') == "t3.medium" for instance in web]
+        assert all_and_not_empty(t3_medium)
 
     def test_has_api_termination_disabled(web):
         disabled = aws.instances_attribute(web, 'disableApiTermination')
@@ -193,7 +193,7 @@ Finally we write tests for our web instances in ``tests/test_web.py``:
 pyunit examples
 ~~~~~~~~~~~~~~~
 
-``pyunit`` (the module itself if called ``unittest``)
+``pyunit`` (the module itself is called ``unittest``)
 does not have test fixtures,
 and thus every test will need to make API calls.
 Here is an example:
