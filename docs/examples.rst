@@ -4,6 +4,10 @@ pytest examples
 A simple test
 +++++++++++++
 
+To start,
+let's test something true for all of our infrastructure:
+No instances accept ssh from the world.
+
 .. code-block:: python
 
     import pytest
@@ -74,7 +78,7 @@ Perhaps we would like to test some things about
 our internally reachable web instances:
 
 * That they are only reachable from your offices.
-* That they can only be SSH'ed to from your developer offices.
+* That they can only be SSHed to from your developer offices.
 * That they have public IPs
 * That their public IPs are elastic IPs
 * That they don't accept any traffic other than SSH and HTTPS
@@ -89,14 +93,14 @@ Assume we have a ``variables.tf`` file like this:
     variable "cidr" {
       default = {
         cidr.adelaide      = "10.10.0.0/24"
-        cidr.buenos_aires  = "10.10.0.0/24"
-        cidr.cairo         = "10.10.0.0/24"
-        cidr.djakarta      = "10.10.0.0/24"
-        cidr.new_york      = "10.10.0.0/24"
-        cidr.paris         = "10.10.0.0/24"
+        cidr.buenos_aires  = "10.10.1.0/24"
+        cidr.cairo         = "10.10.2.0/24"
+        cidr.djakarta      = "10.10.3.0/24"
+        cidr.new_york      = "10.10.4.0/24"
+        cidr.paris         = "10.10.5.0/24"
 
-        cidr.mumbai        = "10.10.0.0/24"
-        cidr.san_francisco = "10.10.0.0/24"
+        cidr.mumbai        = "10.10.6.0/24"
+        cidr.san_francisco = "10.10.7.0/24"
       }
     }
 
@@ -190,6 +194,63 @@ Finally we write tests for our web instances in ``tests/test_web.py``:
         assert all_and_not_empty(disabled)
 
 
+standalone terraform
+++++++++++++++++++++
+
+We might want to test things using other libraries --
+the fantastic ``requests`` library, for instance.
+
+For this, we might want to look up some resources in terraform.
+
+For instance, 
+if we have a Cloudfront distribution backed by an S3 bucket,
+we might want to assert we can reach the Cloudfront URL,
+but not the S3 bucket.
+
+Assuming we have a terraform module ``webapp`` with these outputs:
+
+.. code-block:: terraform
+
+    output "dns" { value = aws_cloudfront_distribution.example.domain_name }
+    output "s3_dns" { value = aws_s3_bucket.example.bucket_domain_name }
+
+we can test reachability (and non-reachability!) thusly:
+
+.. code-block:: python
+
+    import pytest
+    import requests
+
+    from carvajal import terraform as tfm
+
+    @pytest.fixture(scope="module")
+    def dns():
+        return tfm.console("module.webapp.dns")
+
+    @pytest.fixture(scope="module")
+    def s3_dns():
+        return tfm.console("module.webapp.s3_dns")
+
+    def test_http_endpoint_returns_200_OK(dns):
+        r = requests.get(f'http://{dns}')
+        assert r.status_code == 200
+
+    def test_https_endpoint_returns_200_OK(dns):
+        r = requests.get(f'https://{dns}')
+        assert r.status_code == 200
+
+    def test_http_bucket_returns_403_forbidden(s3_dns):
+        print(f'http://{s3_dns}')
+        r = requests.get(f'http://{s3_dns}')
+        assert r.status_code == 403
+
+    def test_https_bucket_returns_403_forbidden(s3_dns):
+        r = requests.get(f'https://{s3_dns}')
+        assert r.status_code == 403
+
+(Yes, these tests break the "don't rely on the network" testing motto.
+We may still find them useful.)
+
 pyunit examples
 ~~~~~~~~~~~~~~~
 
@@ -222,7 +283,7 @@ Here is an example:
 However, we can run ``pyunit`` tests with the ``pytest`` runner,
 and that will let us use fixtures.
 This is be nice for those who prefer the ``xunit`` style of tests,
-but need the speed boost from fixtures.
+but still want the speed boost from fixtures.
 
 .. code-block:: python
 
