@@ -167,7 +167,7 @@ Finally we write tests for our web instances in ``tests/test_web.py``:
         assert actual["sgids"] == set()
 
     def test_accepts_ssh_from_devs_only(web, developers):
-        actual = aws.instances_port_ingress_sources(web, port=443)
+        actual = aws.instances_port_ingress_sources(web, port=22)
         assert actual["cidrs"] == developers
         assert actual["sgids"] == set()
 
@@ -240,7 +240,6 @@ we can test reachability (and non-reachability!) thusly:
         assert r.status_code == 200
 
     def test_http_bucket_returns_403_forbidden(s3_dns):
-        print(f'http://{s3_dns}')
         r = requests.get(f'http://{s3_dns}')
         assert r.status_code == 403
 
