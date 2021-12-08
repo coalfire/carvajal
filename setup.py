@@ -1,12 +1,13 @@
 import setuptools
+import carvajal.__about__ as about
 
 with open("README.rst", "r", encoding="utf-8") as fh:
     readme = fh.read()
 
 setuptools.setup(
-    name="carvajal",
-    version="0.1.3",
-    author="Noah Birnel",
+    name=about.__project__,
+    version=about.__version__,
+    author=about.__author__,
     author_email="noah.birnel@coalfire.com",
     description="Helper functions for describing AWS infrastructure",
     long_description=readme,

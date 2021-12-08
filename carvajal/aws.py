@@ -12,10 +12,11 @@ from botocore.exceptions import NoRegionError as BotoNoRegionError
 
 
 try:
-    ec2_client = boto3.client("ec2")
-    s3_client = boto3.client("s3")
     ec2 = boto3.resource("ec2")
+    ec2_client = boto3.client("ec2")
     elbv2_client = boto3.client("elbv2")
+    iam = boto3.resource("iam")
+    s3_client = boto3.client("s3")
 except BotoNoRegionError:
     pass
 
@@ -168,19 +169,6 @@ def get_addresses(filters=None):
     """
     filters = filters or []
     return ec2_client.describe_addresses(Filters=filters)["Addresses"]
-
-
-def get_s3_buckets_names():
-    """
-    Return all S3 bucket names.
-
-    :return: List of S3 bucket names.
-    :rtype: list
-    """
-    return [
-        bucket["Name"]
-        for bucket in s3_client.list_buckets()["Buckets"]
-    ]
 
 
 def instances_security_groups_ids(instances):
@@ -460,6 +448,19 @@ def instances_elastic_ips(instances):
     )["Addresses"]
 
 
+def get_s3_buckets_names():
+    """
+    Return all S3 bucket names.
+
+    :return: List of S3 bucket names.
+    :rtype: list
+    """
+    return [
+        bucket["Name"]
+        for bucket in s3_client.list_buckets()["Buckets"]
+    ]
+
+
 def buckets_encrypted(buckets):
     """
     Return bucket's encryption object or None for each bucket.
@@ -479,3 +480,68 @@ def buckets_encrypted(buckets):
             return None
 
     return [maybe_encrypted(bucket) for bucket in buckets]
+
+
+def _inline_and_attached_policy_statements(resource):
+    statements = []
+    resource.load()
+    inline_policies = resource.policies.all()
+    attached_policies = resource.attached_policies.all()
+
+    for policy in inline_policies:
+        for statement in policy.policy_document["Statement"]:
+            statements.append(statement)
+
+    for policy in attached_policies:
+        arn = policy.arn
+        version_id = iam.Policy(arn).default_version_id
+        policy_version = iam.PolicyVersion(arn, version_id)
+        if policy_version:
+            for statement in policy_version.document["Statement"]:
+                statements.append(statement)
+
+    return statements
+
+
+def user_policy_document_statements(name):
+    """
+    Return a list of all policy document statements attached to a user
+    (by direct attach, by attached policy, or by group).
+
+    :param name: name of an IAM User
+    :type name: str
+    :return: List of policy document_statements attached to user name
+    :rtype: list
+    """
+    user = iam.User(name)
+    statements = _inline_and_attached_policy_statements(user)
+
+    groups = user.groups.all()
+    for group in groups:
+        statements += _inline_and_attached_policy_statements(group)
+
+    return statements
+
+
+def policy_statement_allowed_actions_on_arn(statements, arn):
+    """
+    Accepts statements and arn.
+    Return a set of Allowed actions on arn.
+
+    :param statements: iterable of IAM policy statements
+    :type statements: iter
+    :param arn: arn of a resource
+    :type arn: str
+    :return: set of Actions allowed on arn
+    :rtype: set
+    """
+    allowed = [
+        statement
+        for statement in statements
+        if arn in statement["Resource"]
+        and statement["Effect"] == "Allow"
+        and statement.get("Action", False)
+    ]
+    return set(
+        chain.from_iterable(statement["Action"] for statement in allowed)
+    )
