@@ -503,7 +503,7 @@ def _inline_and_attached_policy_statements(resource):
     return statements
 
 
-def user_policy_document_statements(name):
+def iam_user_policy_document_statements(name):
     """
     Return a list of all policy document statements attached to a user
     (by direct attach, by attached policy, or by group).
@@ -523,7 +523,7 @@ def user_policy_document_statements(name):
     return statements
 
 
-def policy_statement_allowed_actions_on_arn(statements, arn):
+def iam_policy_statement_allowed_actions_on_arn(statements, arn):
     """
     Accepts statements and arn.
     Return a set of Allowed actions on arn.
